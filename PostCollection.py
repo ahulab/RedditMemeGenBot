@@ -82,5 +82,3 @@ for x, i in enumerate(hot_posts):
 			picture = requests.get(i.url)
 			img = Image.open(StringIO(picture.content))
 			add_text(img, i.id, i.comments[0].body)
-
-
