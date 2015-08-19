@@ -1,4 +1,5 @@
-import requests, re
+import requests, re, io
+import urllib2 as urllib
 from PIL import Image, ImageDraw, ImageFont
 from StringIO import StringIO
 
@@ -7,24 +8,38 @@ path_to_font='/Library/Font/Trebuchet MS Bold.ttf'
 
 class Post:
 
-	def __init__(self, submission):
+	def __init__(self, submission, commentIndex=0):
 		self.dict ={
 			'postId': submission.id,
 			'postName': submission.title,
-			'postComment': submission.comments[0].body,
+			'postComment': submission.comments[commentIndex].body,
 			'postAuthor': submission.author,
 			'postUrl': submission.permalink,
 			'picUrl': submission.url,
 			'postDate': submission.created,
-			'commentAuthor': submission.comments[0].author
+			'commentAuthor': submission.comments[commentIndex].author
 		}
 
 		self.image = self._load_image(submission.url)
 
 
 	def _load_image(self, picUrl):
-		picture = requests.get(picUrl)
-		img = Image.open(StringIO(picture.content))
+		##code here was giving me errors sometimes about not being able to read the image
+		# picture = requests.get(picUrl)
+		# img = Image.open(StringIO(picture.content))
+
+		# #image needs to be RGB because we are passing (x, x, x) as the color
+		# if img.mode <> "RGB":
+		# 	img.convert("RGB")
+		# return img
+
+		picture = urllib.urlopen(picUrl)
+		image_file = io.BytesIO(picture.read())
+		img = Image.open(image_file)
+
+		#image needs to be RGB because we are passing (x, x, x) as the color
+		if img.mode <> "RGB":
+			img.convert("RGB")
 		return img
 
 
@@ -76,7 +91,7 @@ class Post:
 		#same drawing operation as was done with the first half of text
 		self.draw_meme_text(string_halves[1], self.image.width, self.image.height, fnt, draw, position='bottom')
 
-		self.image.save('{}.jpg'.format(self.dict['postId']))
+		self.image.save('memedPost{}.jpg'.format(self.dict['postId']))
 		#image.show()
 
 
@@ -138,9 +153,9 @@ class Post:
 			xy = (0,(height - font.getsize(new_string)[1] * slice_count))
 		
 		#print 'drawing {} at {}'.format(new_string, xy)
-		draw.multiline_text(xy,new_string,(0,0,0), font=font)
+		draw.multiline_text(xy,new_string,fill='black', font=font)
 		ab = (xy[0] + 2, xy[1] + 2)
-		draw.multiline_text(ab,new_string,(255,255,255), font=font)
+		draw.multiline_text(ab,new_string,fill='white', font=font)
 
 
 	def find_center(width):
@@ -168,6 +183,7 @@ class Post:
 				#this will only execute if this is the first time this function has been called (ie. last_size is None) and size 10 is too
 				#large of a text size for the image. I'm just going to leave it at 10 for now
 				font = ImageFont.truetype(path_to_font, size=10)
+				return font
 
 		elif font.getsize(string_halves[0])[0] < width or font.getsize(string_halves[1])[0] < width:
 			last_size = size
