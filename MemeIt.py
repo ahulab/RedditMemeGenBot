@@ -1,6 +1,7 @@
 from PIL import Image, ImageDraw, ImageFont
 
-path_to_font='/Library/Font/Phosphate.ttc'
+#path_to_font='/Library/Font/Phosphate.ttc'
+path_to_font='/Library/Font/Trebuchet MS Bold.ttf'
 
 def draw_meme_text(string, width, height, font, draw, position):
 	#string is first half of the message
@@ -60,7 +61,9 @@ def draw_meme_text(string, width, height, font, draw, position):
 		xy = (0,(height - font.getsize(new_string)[1] * slice_count))
 	
 	#print 'drawing {} at {}'.format(new_string, xy)
-	draw.multiline_text(xy,new_string,(255,255,255), font=font)
+	draw.multiline_text(xy,new_string,(0,0,0), font=font)
+	ab = (xy[0] + 2, xy[1] + 2)
+	draw.multiline_text(ab,new_string,(255,255,255), font=font)
 
 
 def find_center(width):
@@ -128,9 +131,3 @@ def halve_string(meme_string):
 
 	#returns 2 strings
 	return first_half, second_half
-
-
-
-
-
-
