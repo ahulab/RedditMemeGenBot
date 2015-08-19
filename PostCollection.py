@@ -1,5 +1,6 @@
-import requests, re, io
+import re, io
 import urllib2 as urllib
+from urllib2 import Request
 from PIL import Image, ImageDraw, ImageFont
 from StringIO import StringIO
 
@@ -8,7 +9,7 @@ path_to_font='/Library/Font/Trebuchet MS Bold.ttf'
 
 class Post:
 
-	def __init__(self, submission, commentIndex=0):
+	def __init__(self, submission, filetype, commentIndex=0):
 		self.dict ={
 			'postId': submission.id,
 			'postName': submission.title,
@@ -19,11 +20,12 @@ class Post:
 			'postDate': submission.created,
 			'commentAuthor': submission.comments[commentIndex].author
 		}
+		self.filetype = filetype
+		self.draw_failed = None
+		#self.image = self._load_image(submission.url)
 
-		self.image = self._load_image(submission.url)
 
-
-	def _load_image(self, picUrl):
+	def load_image(self, picUrl):
 		##code here was giving me errors sometimes about not being able to read the image
 		# picture = requests.get(picUrl)
 		# img = Image.open(StringIO(picture.content))
@@ -33,14 +35,19 @@ class Post:
 		# 	img.convert("RGB")
 		# return img
 
-		picture = urllib.urlopen(picUrl)
-		image_file = io.BytesIO(picture.read())
-		img = Image.open(image_file)
+		try:
+			picture = urllib.urlopen(picUrl)
+			image_file = io.BytesIO(picture.read())
+			img = Image.open(image_file).convert('RGB')
+			self.image = img
+
+		except urllib.HTTPError, e:
+			self.image = None
 
 		#image needs to be RGB because we are passing (x, x, x) as the color
-		if img.mode <> "RGB":
-			img.convert("RGB")
-		return img
+		# if img.mode <> "RGB":
+		# 	img.convert("RGB")
+		
 
 
 	def add_text(self):
@@ -91,8 +98,11 @@ class Post:
 		#same drawing operation as was done with the first half of text
 		self.draw_meme_text(string_halves[1], self.image.width, self.image.height, fnt, draw, position='bottom')
 
-		self.image.save('memedPost{}.jpg'.format(self.dict['postId']))
-		#image.show()
+		if self.draw_failed:
+			#don't save the image
+			pass
+		else:
+			self.image.save('memedPost{}.{}'.format(self.dict['postId'], self.filetype))
 
 
 	def draw_meme_text(self, string, width, height, font, draw, position):
@@ -153,9 +163,14 @@ class Post:
 			xy = (0,(height - font.getsize(new_string)[1] * slice_count))
 		
 		#print 'drawing {} at {}'.format(new_string, xy)
-		draw.multiline_text(xy,new_string,fill='black', font=font)
-		ab = (xy[0] + 2, xy[1] + 2)
-		draw.multiline_text(ab,new_string,fill='white', font=font)
+		try:
+			draw.multiline_text(xy,new_string,fill='black', font=font)
+			ab = (xy[0] + 2, xy[1] + 2)
+			draw.multiline_text(ab,new_string,fill='white', font=font)
+			self.draw_failed = False
+		except:
+			self.draw_failed = True
+			print "Drawing failed, not modifying picture"
 
 
 	def find_center(width):

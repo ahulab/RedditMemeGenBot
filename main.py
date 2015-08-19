@@ -33,6 +33,19 @@ def file_work(sub_name):
 			#use shutil.move to move images to folder for safe keeping :)
 			move(i, folder_path)
 
+
+def load_draw_save(submission, filetype, commentIndex):
+	targetPost = Post(submission, filetype, commentIndex=commentIndex)
+	url = submission.url + '.jpg'
+	targetPost.load_image(url)
+
+	if targetPost.image:
+		targetPost.add_text()
+
+		# dictionary stuff for record keeping
+		if submission.id not in post_dict['items']:
+			post_dict['items'][targetPost.dict['postId']] = targetPost.dict
+
 #via redditlist.com/all
 # top_subreddits = ['pics', 'todayilearned', 'aww', 'wtf',
 #  'gaming', 'leagueoflegends', 'gonewild', 'me_irl', 'news', 'mildlyinteresting', 
@@ -41,7 +54,7 @@ def file_work(sub_name):
 #  'technology', 'nsfw', 'RealGirls', 'gentlemenboners', 'atheism', 'science', 'woahdude', 'food']
 
 #above was for testing, idk too lazy to change it all back or whatver
-top_subreddits = ['pics']
+top_subreddits = ['whatisthisthing']
 
 
 ######################################
@@ -68,7 +81,7 @@ for subreddit in top_subreddits:
 
 	#gets 25 'hot' submissions in the subreddit
 
-	for x, submission in enumerate(hot_posts):
+	for submission in hot_posts:
 		#print submission.title
 		
 		#make sure there is at least 1 comment in the submission
@@ -89,18 +102,40 @@ for subreddit in top_subreddits:
 
 		if doable:
 			if '/a/' not in submission.url and '.jpg' in submission.url or '.png' in submission.url or '.JPEG' in submission.url:
+				
+				#so that we can pass the filetype to the Post instance and name the file accordingly when we save it
+				filetype = submission.url.split('.')[-1]
+				if 'jpg' in filetype.lower():
+					filetype = 'jpg'
+				elif 'png' in filetype.lower():
+					filetype = 'png'
+				elif 'jpeg' in filetype.lower():
+					filetype = 'jpeg'
+
 				print "\nURL is {}. Post id is {}".format(submission.url, submission.id)
-				#this is an image link ending in .jpg, will be okay for now
 
-				targetPost = Post(submission, commentIndex=attempt)
-				targetPost.add_text()
+				#do it all yo
+				load_draw_save(submission, filetype, attempt)
 
-				#dictionary stuff for record keeping
-				if submission.id not in post_dict['items']:
-					post_dict['items'][targetPost.dict['postId']] = targetPost.dict
-				#print post_dict
+
+			elif submission.domain == 'imgur.com':
+				#this is gross
+				#so if the image does not have .jpg or .png or .JPEG in it's url, BUT it's domain is imgur.com
+				#then this means that it is still an image, but the link goes to the viewing page on imgur, not the
+				#actual image. So we will just add .jpg to the end of the url and carry on
+
+				print "\nURL is {}. Post id is {}".format(submission.url, submission.id)
+
+				try:
+					filetype = 'jpg'
+					#do it all yo
+					load_draw_save(submission, filetype, attempt)
+				except:
+					print 'error'
+
+				
 			else:
-				print "Ignoring post {}, not a picture".format(submission.id)
+				print "Ignoring post {}, not a picture, url is {}".format(submission.id, submission.url)
 
 
 	file_work(sub_name)
