@@ -22,6 +22,8 @@ class Post:
 		}
 		self.filetype = filetype
 		self.draw_failed = None
+		#initialized as None, but is loaded in the next step in main after it's initialized
+		self.image = None
 
 
 	def load_image(self, picUrl):
@@ -32,7 +34,10 @@ class Post:
 			self.image = img
 
 		except urllib.HTTPError, e:
-			self.image = None		
+			self.image = None	
+
+		except IOError:
+			self.image = None	
 
 
 	def add_text(self):
@@ -70,17 +75,18 @@ class Post:
 			lines = 5
 		else:
 			lines = 6
+		
 
 		new_size = fnt.size * lines
 		fnt = ImageFont.truetype(path_to_font, size=new_size)
 
 		#draw the first half on the image
-		self.draw_meme_text(string_halves[0], self.image.width, self.image.height, fnt, draw, position='top')
+		self.split_to_fit(string_halves[0], fnt, draw, position='top')
 
 		#find the height of the string so that we know where to start of the y axis
 		string_height = draw.textsize(string_halves[0])[1]
 		#same drawing operation as was done with the first half of text
-		self.draw_meme_text(string_halves[1], self.image.width, self.image.height, fnt, draw, position='bottom')
+		self.split_to_fit(string_halves[1], fnt, draw, position='bottom')
 
 		if self.draw_failed:
 			#don't save the image
@@ -89,7 +95,7 @@ class Post:
 			self.image.save('memedPost{}.{}'.format(self.dict['postId'], self.filetype))
 
 
-	def draw_meme_text(self, string, width, height, font, draw, position):
+	def split_to_fit(self, string, font, draw, position):
 		#string is first half of the message
 		string_list = string.split(' ')
 
@@ -101,50 +107,72 @@ class Post:
 		new_string = ''
 		#index of each space in the string
 		spaces = []
+		spaces_location = [(0,1)]
+		#spaces_location [(character index in string, line number)]
 		#number of newline chars inserted into the string, needed to calculate offset of text from bottom of image
 		slice_count = 1
 
 		#if draw.textsize(string)[0] > width:
-		if font.getsize(string)[0] > width:
+		if font.getsize(string)[0] > self.image.width - 2:
 			#if the string will not fit onto the image in one line then we will need to make some changes to it
 			#otherwise it will stay the same
+			num_spaces = 0
 			for x, char in enumerate(string):
 				if char == " ":
-					spaces.append(x)
-					#if the character is a space then check to see if the chunk of text we're looking at 
-					#will fit on the image, if it does not fit, then we need to stick a newline character in the string
-					#if draw.textsize(string[begin_slice:x])[0] > width:
-					if font.getsize(string[begin_slice:x])[0] > width:
-						slice_count += 1
+					spaces_location.append((x, slice_count))
+				#if the character is a space then check to see if the chunk of text we're looking at 
+				#will fit on the image, if it does not fit, then we need to stick a newline character in the string
+				if font.getsize(string[begin_slice:x])[0] > self.image.width - 2:
+					
 
-						#get the second to last item in the list 'spaces'. This will be the space that was found last time
-						#this portion of the loop was executed. We are going to stick a newline char in that spot
-						#This is because otherwise we could potentially have a word that trails off of the end of the image
-						new_string += string[begin_slice:spaces[(len(spaces)-2)]] + '\n'
-						
-						#start on a new slice of text to add. start one word earlier than the current word
-						begin_slice = spaces[(len(spaces)-2)] + 1
+					#get the second to last item in the list 'spaces'. This will be the space that was found last time
+					#this portion of the loop was executed. We are going to stick a newline char in that spot
+					#This is because otherwise we could potentially have a word that trails off of the end of the image
+					
+					#new_string += string[begin_slice:x - 1] + '\n'
+					if spaces_location[-1][1] == slice_count or slice_count == 1:
+						new_string += string[begin_slice:spaces_location[-1][0]] + '\n'
+						begin_slice = spaces_location[-1][0] + 1
+					else: 
+						print 'else'
+						#last space is on a line above, insert new line at current location
+						new_string += string[begin_slice:x - 2] + '\n'
+						begin_slice = x - 2
 
-						#the end of this slice is one character after the space, so the start of the next word..
-						end_slice = x + 1
-					else:
-						#the current slice of text will fit in between the bounds of the image
-						pass
+					slice_count += 1
+					end_slice = begin_slice
+					
+				else:
+					#the current slice of text will fit in between the bounds of the image
+					pass
+
+			#print "1. height from bottom is {}".format(height - font.getsize(new_string)[1] * slice_count)
 
 
 			new_string += string[end_slice:]
 
+
 		#elif draw.textsize(string)[0] >= width:
-		elif font.getsize(string)[0] <= width:
+		elif font.getsize(string)[0] <= self.image.width:
 			#do nothing because the string will fit
 			new_string = string
 
+		#return [new_string, slice_count]
+
+
+		#draw
 		#depending on arg, text will be written on top or bottom
 		if position == 'top':
 			xy = (0,0)
 		elif position == 'bottom':
+			slice_count = 1
+			for i in new_string:
+				if i == '\n':
+					slice_count += 1
+			#print "2. height from bottom is {}".format(height - font.getsize(new_string)[1] * slice_count)
+
 			#find height of text using selected font, multiply that by the number of slices to know how high up we must start
-			xy = (0,(height - font.getsize(new_string)[1] * slice_count))
+			xy = (0,(self.image.height - font.getsize(new_string)[1] * slice_count))
 		
 		#print 'drawing {} at {}'.format(new_string, xy)
 		try:
@@ -156,6 +184,9 @@ class Post:
 			self.draw_failed = True
 			print "Drawing failed, not modifying picture"
 
+
+	def draw_meme_string():
+		pass
 
 	def find_center(width):
 		try:
@@ -172,7 +203,7 @@ class Post:
 
 		if font.getsize(string_halves[0])[0] > width or font.getsize(string_halves[1])[0] > width:
 			#the line goes over, this is fine
-			print "Choosing size of {}".format(last_size)
+			print "Choosing font size of {}".format(last_size)
 			if last_size:
 				#print 'last_size is not null'
 				font = ImageFont.truetype(path_to_font, size=last_size)

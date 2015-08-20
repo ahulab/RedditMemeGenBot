@@ -47,14 +47,14 @@ def load_draw_save(submission, filetype, commentIndex):
 			post_dict['items'][targetPost.dict['postId']] = targetPost.dict
 
 #via redditlist.com/all
-# top_subreddits = ['pics', 'todayilearned', 'aww', 'wtf',
-#  'gaming', 'leagueoflegends', 'gonewild', 'me_irl', 'news', 'mildlyinteresting', 
-#  'worldnews', 'politics', 'DotA2', 'pcmasterrace', 'TrollXChromosomes',
-#  'SandersForPresident', 'GlobalOffensive', 'soccer', 'trees', 'interestingasfuck', 
-#  'technology', 'nsfw', 'RealGirls', 'gentlemenboners', 'atheism', 'science', 'woahdude', 'food']
+top_subreddits = ['wtf',
+ 'gaming', 'leagueoflegends', 'gonewild', 'me_irl', 'news', 'mildlyinteresting', 
+ 'worldnews', 'politics', 'DotA2', 'pcmasterrace', 'TrollXChromosomes',
+ 'SandersForPresident', 'GlobalOffensive', 'soccer', 'trees', 'interestingasfuck', 
+ 'technology', 'nsfw', 'RealGirls', 'gentlemenboners', 'atheism', 'science', 'woahdude', 'food']
 
 #above was for testing, idk too lazy to change it all back or whatver
-top_subreddits = ['whatisthisthing']
+#top_subreddits = ['whatisthisthing']
 
 
 ######################################
@@ -66,21 +66,22 @@ post_dict = {
 	'items':{}
 }
 
-user_agent = "Meme generator bot 0.1 by /u/cDoubt"
+user_agent = "Meme generator bot v1.0 by /u/cDoubt"
 r = praw.Reddit(user_agent=user_agent)
 
 for subreddit in top_subreddits:
 	sub_name = subreddit
 	pics_subreddit = r.get_subreddit(sub_name)
-	hot_posts = pics_subreddit.get_top_from_all(limit=50)
+	hot_posts = pics_subreddit.get_hot(limit=70)
 	#other options include
 	#get_top
 	#get_hot
 	#get_top_from_month
 	#get_top_from_week
 
-	#gets 25 'hot' submissions in the subreddit
 
+	#submission = r.get_submission(submission_id='2a1vjl')
+	#for x in range(0,1):
 	for submission in hot_posts:
 		#print submission.title
 		
@@ -131,7 +132,7 @@ for subreddit in top_subreddits:
 					#do it all yo
 					load_draw_save(submission, filetype, attempt)
 				except:
-					print 'error'
+					print 'Error loading file for post {}, skipping'.format(submission.id)
 
 				
 			else:
