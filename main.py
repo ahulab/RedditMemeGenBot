@@ -47,11 +47,8 @@ def load_draw_save(submission, filetype, commentIndex):
 			post_dict['items'][targetPost.dict['postId']] = targetPost.dict
 
 #via redditlist.com/all
-top_subreddits = ['wtf',
- 'gaming', 'leagueoflegends', 'gonewild', 'me_irl', 'news', 'mildlyinteresting', 
- 'worldnews', 'politics', 'DotA2', 'pcmasterrace', 'TrollXChromosomes',
- 'SandersForPresident', 'GlobalOffensive', 'soccer', 'trees', 'interestingasfuck', 
- 'technology', 'nsfw', 'RealGirls', 'gentlemenboners', 'atheism', 'science', 'woahdude', 'food']
+top_subreddits = ['wtf', 'aww', 'space', 'creepy', 'spaceporn', 'pics', 'whatsthisplant', 'whatsthisbug', 'animalID', 'whatsthisbird',
+'Whatisthisthing', 'mildlyinteresting', 'whatsthisrock', 'FossilID',  'nsfw', 'gonewild']
 
 #above was for testing, idk too lazy to change it all back or whatver
 #top_subreddits = ['whatisthisthing']
@@ -72,7 +69,7 @@ r = praw.Reddit(user_agent=user_agent)
 for subreddit in top_subreddits:
 	sub_name = subreddit
 	pics_subreddit = r.get_subreddit(sub_name)
-	hot_posts = pics_subreddit.get_hot(limit=70)
+	hot_posts = pics_subreddit.get_top_from_all(limit=40)
 	#other options include
 	#get_top
 	#get_hot
@@ -80,7 +77,7 @@ for subreddit in top_subreddits:
 	#get_top_from_week
 
 
-	#submission = r.get_submission(submission_id='2a1vjl')
+	#submission = r.get_submission(submission_id='2ohk65')
 	#for x in range(0,1):
 	for submission in hot_posts:
 		#print submission.title

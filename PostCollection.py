@@ -63,7 +63,7 @@ class Post:
 			if i == " ":
 				word_count += 1
 
-		fnt = self.font_setup(string_halves, self.image.width, 10)
+		self.font_setup(string_halves, self.image.width, 10)
 
 		#some guesswork. depending on the number of words we are going to make the image have x lines of text
 		#this is so that images with long comments do not just have one long line of unlegible text across the top and bottom
@@ -77,16 +77,18 @@ class Post:
 			lines = 6
 		
 
-		new_size = fnt.size * lines
-		fnt = ImageFont.truetype(path_to_font, size=new_size)
+		new_size = self.font.size * lines
+		self.font = ImageFont.truetype(path_to_font, size=new_size)
 
-		#draw the first half on the image
-		self.split_to_fit(string_halves[0], fnt, draw, position='top')
 
 		#find the height of the string so that we know where to start of the y axis
 		string_height = draw.textsize(string_halves[0])[1]
 		#same drawing operation as was done with the first half of text
-		self.split_to_fit(string_halves[1], fnt, draw, position='bottom')
+		self.split_to_fit(string_halves[1], draw, position='bottom')
+		#draw the first half on the image
+		self.split_to_fit(string_halves[0], draw, position='top')
+
+		
 
 		if self.draw_failed:
 			#don't save the image
@@ -95,10 +97,9 @@ class Post:
 			self.image.save('memedPost{}.{}'.format(self.dict['postId'], self.filetype))
 
 
-	def split_to_fit(self, string, font, draw, position):
+	def split_to_fit(self, string, draw, position):
 		#string is first half of the message
-		string_list = string.split(' ')
-
+		
 		#split the string into multiple strings that we can write to the picture 
 		#starting point for each slice
 		begin_slice = 0
@@ -113,7 +114,7 @@ class Post:
 		slice_count = 1
 
 		#if draw.textsize(string)[0] > width:
-		if font.getsize(string)[0] > self.image.width - 2:
+		if self.font.getsize(string)[0] > self.image.width - 2:
 			#if the string will not fit onto the image in one line then we will need to make some changes to it
 			#otherwise it will stay the same
 			num_spaces = 0
@@ -122,7 +123,7 @@ class Post:
 					spaces_location.append((x, slice_count))
 				#if the character is a space then check to see if the chunk of text we're looking at 
 				#will fit on the image, if it does not fit, then we need to stick a newline character in the string
-				if font.getsize(string[begin_slice:x])[0] > self.image.width - 2:
+				if self.font.getsize(string[begin_slice:x])[0] > self.image.width - 2:
 					
 
 					#get the second to last item in the list 'spaces'. This will be the space that was found last time
@@ -133,8 +134,9 @@ class Post:
 					if spaces_location[-1][1] == slice_count or slice_count == 1:
 						new_string += string[begin_slice:spaces_location[-1][0]] + '\n'
 						begin_slice = spaces_location[-1][0] + 1
+						
 					else: 
-						print 'else'
+						
 						#last space is on a line above, insert new line at current location
 						new_string += string[begin_slice:x - 2] + '\n'
 						begin_slice = x - 2
@@ -153,40 +155,64 @@ class Post:
 
 
 		#elif draw.textsize(string)[0] >= width:
-		elif font.getsize(string)[0] <= self.image.width:
+		elif self.font.getsize(string)[0] <= self.image.width:
 			#do nothing because the string will fit
 			new_string = string
 
 		#return [new_string, slice_count]
 
-
-		#draw
-		#depending on arg, text will be written on top or bottom
-		if position == 'top':
-			xy = (0,0)
-		elif position == 'bottom':
-			slice_count = 1
-			for i in new_string:
-				if i == '\n':
-					slice_count += 1
-			#print "2. height from bottom is {}".format(height - font.getsize(new_string)[1] * slice_count)
-
-			#find height of text using selected font, multiply that by the number of slices to know how high up we must start
-			xy = (0,(self.image.height - font.getsize(new_string)[1] * slice_count))
 		
-		#print 'drawing {} at {}'.format(new_string, xy)
-		try:
-			draw.multiline_text(xy,new_string,fill='black', font=font)
-			ab = (xy[0] + 2, xy[1] + 2)
-			draw.multiline_text(ab,new_string,fill='white', font=font)
-			self.draw_failed = False
-		except:
-			self.draw_failed = True
-			print "Drawing failed, not modifying picture"
+		self.draw_meme_string(new_string, slice_count, draw, string, position=position)
 
 
-	def draw_meme_string():
-		pass
+
+	def draw_meme_string(self, new_string, slice_count, draw, string, position):
+		no_text_zone = ((self.image.height/9*4), (self.image.height/9*5))
+
+		#see if bottom text goes over the no text zone in the middle of the photo
+		#we only need to check the bottom because bottom text is written first, so if there is an issue with text size
+		#it will be fixed by the time this function is called with the the top text
+		if position == 'bottom' and (self.font.getsize(new_string)[1] * slice_count) < self.image.height * .15:
+		\
+			font_size = int(self.font.size * 1.2)
+			self.font = ImageFont.truetype(path_to_font, size=font_size)
+			self.split_to_fit(string, draw, position)
+
+		else:
+
+			if position == 'bottom' and self.font.getsize(new_string)[1] * slice_count < self.image.height - no_text_zone[1] or position == 'top':
+				
+					#depending on arg, text will be written on top or bottom
+				if position == 'top':
+					xy = (0,0)
+				elif position == 'bottom':
+					slice_count = 1
+					for i in new_string:
+						if i == '\n':
+							slice_count += 1
+
+					#find height of text using selected font, multiply that by the number of slices to know how high up we must start
+					xy = (0,(self.image.height - self.font.getsize(new_string)[1] * slice_count))
+				
+				#print 'drawing {} at {}'.format(new_string, xy)
+				try:
+					draw.multiline_text(xy,new_string,fill='black', font=self.font)
+					ab = (xy[0] + 2, xy[1] + 2)
+					draw.multiline_text(ab,new_string,fill='white', font=self.font)
+					self.draw_failed = False
+				except:
+					self.draw_failed = True
+					print "Drawing failed, not modifying picture"
+				
+
+			else:
+				#the text is too large and goes over our no text zone
+				font_size = int(self.font.size / 1.5)
+				self.font = ImageFont.truetype(path_to_font, size=font_size)
+				self.split_to_fit(string, draw, position)
+
+		
+
 
 	def find_center(width):
 		try:
@@ -207,12 +233,15 @@ class Post:
 			if last_size:
 				#print 'last_size is not null'
 				font = ImageFont.truetype(path_to_font, size=last_size)
+				self.font = font
 				return font
+				
 
 			else:
 				#this will only execute if this is the first time this function has been called (ie. last_size is None) and size 10 is too
 				#large of a text size for the image. I'm just going to leave it at 10 for now
 				font = ImageFont.truetype(path_to_font, size=10)
+				self.font = font
 				return font
 
 		elif font.getsize(string_halves[0])[0] < width or font.getsize(string_halves[1])[0] < width:
@@ -220,6 +249,7 @@ class Post:
 			size += 4
 			font = self.font_setup(string_halves, width, size, last_size=last_size)
 
+		self.font = font
 		return font
 
 
