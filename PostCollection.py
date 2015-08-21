@@ -46,7 +46,12 @@ class Post:
 		draw = ImageDraw.Draw(self.image)
 
 		##sanitize and encode text
-		self.dict['postComment'] = re.sub(r'[\n\r]', '', self.dict['postComment']).encode('utf-8')
+		self.dict['postComment'] = re.sub(r'\]\(.*?\)', ' ', self.dict['postComment'])
+		self.dict['postComment'] = re.sub(r'[\n\r\[\]]', '', self.dict['postComment']).strip(',.;:`~@#$').encode('utf-8')
+		
+		print self.dict['postComment']
+		##removing links, because they are ugly
+
 
 
 		#get both halfs of the string
@@ -194,13 +199,14 @@ class Post:
 					#find height of text using selected font, multiply that by the number of slices to know how high up we must start
 					xy = (0,(self.image.height - self.font.getsize(new_string)[1] * slice_count))
 				
-				#print 'drawing {} at {}'.format(new_string, xy)
+				#drawing text in black twice to the left and right of where the white text is finally drawn
+				#this was the easiest way I could think of to get a black outline on the white text
 				try:
-					draw.multiline_text(xy,new_string,fill='black', font=self.font)
-					ab = (xy[0] + 2, xy[1] + 2)
-					draw.multiline_text(xy,new_string,fill='black', font=self.font)
-					cd = (xy[0] - 2, xy[1] - 2)
-					draw.multiline_text(ab,new_string,fill='white', font=self.font)
+					draw.multiline_text(xy,new_string,fill='black', font=self.font, align='center')
+					ab = (xy[0] + 3, xy[1] + 3)
+					draw.multiline_text(ab,new_string,fill='black', font=self.font, align='center')
+					cd = (xy[0] + 1, xy[1] + 1)
+					draw.multiline_text(cd,new_string,fill='white', font=self.font, align='center')
 					
 
 					self.draw_failed = False
@@ -211,7 +217,7 @@ class Post:
 
 			else:
 				#the text is too large and goes over our no text zone
-				font_size = int(self.font.size / 1.5)
+				font_size = int(self.font.size / 2)
 				self.font = ImageFont.truetype(path_to_font, size=font_size)
 				self.split_to_fit(string, draw, position)
 
@@ -235,7 +241,8 @@ class Post:
 			#the line goes over, this is fine
 			print "Choosing font size of {}".format(last_size)
 			if last_size:
-				#print 'last_size is not null'
+				#this function has been called recursilely at least once, so there is a last font size that hase
+				#been passed to it
 				font = ImageFont.truetype(path_to_font, size=last_size)
 				self.font = font
 				return font
@@ -249,6 +256,7 @@ class Post:
 				return font
 
 		elif font.getsize(string_halves[0])[0] < width or font.getsize(string_halves[1])[0] < width:
+			#font size is still too small, bump it up by 4 and try again
 			last_size = size
 			size += 4
 			font = self.font_setup(string_halves, width, size, last_size=last_size)
