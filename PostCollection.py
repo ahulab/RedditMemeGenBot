@@ -5,7 +5,7 @@ from PIL import Image, ImageDraw, ImageFont
 from StringIO import StringIO
 
 #from MemeIt import *
-path_to_font='/Library/Font/Trebuchet MS Bold.ttf'
+path_to_font='/Library/Font/Impact.ttf'
 
 class Post:
 
@@ -173,7 +173,7 @@ class Post:
 		#we only need to check the bottom because bottom text is written first, so if there is an issue with text size
 		#it will be fixed by the time this function is called with the the top text
 		if position == 'bottom' and (self.font.getsize(new_string)[1] * slice_count) < self.image.height * .15:
-		\
+		
 			font_size = int(self.font.size * 1.2)
 			self.font = ImageFont.truetype(path_to_font, size=font_size)
 			self.split_to_fit(string, draw, position)
@@ -198,7 +198,11 @@ class Post:
 				try:
 					draw.multiline_text(xy,new_string,fill='black', font=self.font)
 					ab = (xy[0] + 2, xy[1] + 2)
+					draw.multiline_text(xy,new_string,fill='black', font=self.font)
+					cd = (xy[0] - 2, xy[1] - 2)
 					draw.multiline_text(ab,new_string,fill='white', font=self.font)
+					
+
 					self.draw_failed = False
 				except:
 					self.draw_failed = True
