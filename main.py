@@ -1,32 +1,49 @@
-from PostCollection import Post
+
 import praw
-from os import listdir, mkdir, curdir, environ
+import base64
+import re
+import urllib2 as urllib
+
+from os import listdir, mkdir, curdir, environ, chdir, getcwd
 from shutil import move
 from time import gmtime, strftime
-import urllib2 as urllib
-from json import loads
+from json import loads, dump, load
 
 
-def load_json():
-    """loads past data so that we don't meme-ify the 
-    same posts over and over"""
-    pass
+from PostCollection import Post
+import ImgurAPI
 
 
-def save_json():
-    """saves dictionary created during runtime"""
-    pass
+global post_dict
 
 
-def file_work(sub_name):
+
+def load_json(directory=None):
+    """
+    loads json data generated when the program ran against a given subreddit
+    """
+    
+    if directory:
+        chdir(directory)
+        with open('memedPost_json_data.txt') as json_data:
+            data = load(json_data)
+            return data
+    else:
+        chdir(curdir)
+        with open('memedPost_json_data.txt') as json_data:
+            data = load(json_data)
+            return data
+
+
+def file_work(sub_name, outputFoldersPath):
     # moves all pictures from runtime to folder
     # get time for folder name
-    time = strftime("%a, %d %b %Y at %H:%M", gmtime())
-    folder_name = "{}: {}".format(sub_name, time)
+    time = strftime("%a, %d %b %Y at %H_%M", gmtime())
+    folder_name = "{} {}".format(sub_name, time)
     # create folder with time as name
-    mkdir("./{}".format(folder_name))
+    mkdir("{}/{}".format(outputFoldersPath, folder_name))
     # folder path
-    folder_path = "./{}".format(folder_name)
+    folder_path = "{}/{}".format(outputFoldersPath, folder_name)
 
     # list of all files in current directory
     names = listdir(curdir)
@@ -37,12 +54,14 @@ def file_work(sub_name):
             # use shutil.move to move images to folder for safe keeping :)
             move(i, folder_path)
 
+    return folder_path
 
-def load_draw_save(submission, filetype, commentIndex, 
+
+def load_draw_save(dictionary, submission, filetype, commentIndex, 
     album=False, album_id=None):
 
     targetPost = Post(submission, filetype, commentIndex=commentIndex)
-	
+    
     if album:
         # must load from environment variable or change this line manually
         # this app is registered with imgurs API
@@ -58,7 +77,7 @@ def load_draw_save(submission, filetype, commentIndex,
         targetPost.load_image(url)
 
     else:
-        url = submission.url + '.jpg'
+        url = submission.url + filetype
         targetPost.load_image(url)
 
     if targetPost.image:
@@ -76,33 +95,47 @@ def load_draw_save(submission, filetype, commentIndex,
 # 'whatsthisplant', 'whatsthisbug', 'animalID', 'whatsthisbird',
 # 'Whatisthisthing', 'mildlyinteresting', 'whatsthisrock', 'FossilID',
 #   'nsfw', 'gonewild']
-top_subreddits = ['pics']
+top_subreddits = ['pics', 'all']
 
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # # # # # # # # # # #  main stuff # # # # # # # # # # # # # # #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-# load from json file here instead in the future maybe
-post_dict = {
-    'items': {}
-}
 
 user_agent = "Meme generator bot v1.0 by /u/cDoubt"
 r = praw.Reddit(user_agent=user_agent)
+folder_paths = []
+
+workingDirectory = getcwd()
+
+# Creates folder in working directory named 'OutputFolders' to store all of the images
+# If the folder already exists then we make it our output destination and move on
+try:
+    mkdir('{}/OutputFolders'.format(getcwd()))
+    outputFoldersPath = '{}/OutputFolders'.format(getcwd())
+except OSError as error:
+    outputFoldersPath = '{}/OutputFolders'.format(getcwd())
+
 
 for subreddit in top_subreddits:
+    print '\nWorking on /r/{}'.format(subreddit)
     sub_name = subreddit
     pics_subreddit = r.get_subreddit(sub_name)
-    hot_posts = pics_subreddit.get_hot(limit=60)
+    hot_posts = pics_subreddit.get_hot(limit=25)
+
+    post_dict = {
+    'subreddit': subreddit,
+    'time':  strftime("%a, %d %b %Y at %H_%M", gmtime()), 
+    'items': {}
+    }
     # other options include
-    # get_top_from_all
-    # get_top
-    # get_hot
-    # get_top_from_month
-    # get_top_from_week
-    # submission = r.get_submission(submission_id='3hrv35')
-    # for x in range(0,1):
+    # get_top_from_all, get_top, get_top_from_month, get_top_from_week
+
+    ## this block is for testing
+    #submission = r.get_submission(submission_id='3i0bab')
+    #for x in range(0,1):
+
     for submission in hot_posts:
 
         # make sure there is at least 1 comment in the submission
@@ -131,12 +164,12 @@ for subreddit in top_subreddits:
                 album_id = submission.url.split('/a/')[-1]
 
                 print "\nURL is {}. It is an imgur album. Post id is {}".format(submission.url, submission.id)
-                load_draw_save(submission, 'jpg', attempt, album=True, album_id=album_id)
+                load_draw_save(post_dict, submission, 'jpg', attempt, album=True, album_id=album_id)
 
             # otherwise we find the filetype of the picture
             elif '.jpg' in submission.url or '.png' in submission.url or '.JPEG' in submission.url:
-
                 # so that we can pass the filetype to the Post instance and name the file accordingly when we save it
+
                 filetype = submission.url.split('.')[-1]
                 if 'jpg' in filetype.lower():
                     filetype = 'jpg'
@@ -148,7 +181,7 @@ for subreddit in top_subreddits:
                 print "\nURL is {}. Post id is {}".format(submission.url, submission.id)
 
                 # do it all yo
-                load_draw_save(submission, filetype, attempt)
+                load_draw_save(post_dict, submission, filetype, attempt)
 
             elif submission.domain == 'imgur.com':
                 # this is gross
@@ -159,14 +192,103 @@ for subreddit in top_subreddits:
                 print "\nURL is {}. Post id is {}".format(submission.url, submission.id)
 
                 try:
-                    filetype = 'jpg'
+                    filetype = '.jpg'
                     # do it all yo
-                    load_draw_save(submission, filetype, attempt)
+                    load_draw_save(post_dict, submission, filetype, attempt)
                 except:
                     print 'Error loading file for post {}, skipping'.format(submission.id)
 
 
             else:
-                print "Ignoring post {}, not a picture, url is {}".format(submission.id, submission.url)
+                print "\nIgnoring post {}, not a picture, url is {}".format(submission.id, submission.url)
 
-    file_work(sub_name)
+        elif not doable:
+            print '\nCould not find a suitable comment on this post'
+
+    # move all images from this subreddit into a folder, add that folder path to 
+    # list so that we can run thru them after and upload each image to an imgur album
+    folder_paths.append(file_work(sub_name, outputFoldersPath))
+
+    # write dictionary data from this subreddit to a file so that we can name pictures and 
+    # write descriptions about each etc. 
+    with open('{}/memedPost_json_data.txt'.format(folder_paths[-1]), 'w') as outfile:
+        dump(post_dict, outfile)
+
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # #  Imgur API  # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+# set the following variables that are needed for API calls
+imgur_client_id, imgur_client_secret, imgur_refresh_token = ImgurAPI.load_imgur_creds()
+
+# refresh access token, this will write the new access_token as an env variable
+ImgurAPI.refresh_access(imgur_client_id, imgur_client_secret, imgur_refresh_token)
+
+# pull value from environement variable
+access_token = environ['imgur_access_token']
+
+# folder_paths is a list of the path for each folder that we've saved images
+# to when the program last ran. Of format /Users/usr/Env/etc....
+for path in folder_paths:
+    print '\n Uploading images to imgur album for files in {}'.format(path)
+    # change directory to the folder path
+    chdir(path)
+    album_json = load_json()
+
+    # if there is more than just the output json file in the folder (aka, if there are pictures in the folder)
+    if listdir(curdir) > 1:
+        album_title = '/r/{}'.format(album_json['subreddit'])
+
+        album_description = """
+        Imgur album created by the RedditMemeGen bot. The pictures in this album
+        were generated from the 'hot' content in the {} subreddit at {}
+        """.format(album_json['subreddit'], album_json['time'])
+
+        # creates the imgur album for the images to be uploaded to. Returns the id of 
+        # the album which needs to be passed with each image upload
+        album_id = ImgurAPI.album_creation(album_title, album_description, access_token)
+
+        # current directory is the folder_path
+        num_images = len(listdir(curdir))
+        image_uploaded_number = 0
+        print 'Uplading Images \n'
+
+        for targetFile in listdir(curdir):
+            """
+            Looks for images in the current directory, gets the postID from the image and then uses that
+            to lookup it's dictionary entry. From there we use that data to create an image description
+            to be used when each image is uploaded to imgur
+            """
+            if targetFile.startswith('memedPostPic'):
+                image_uploaded_number += 1
+            
+                # gets the picture id from the image filename, uses this as the lookup value in the output dictionary
+                picId = re.sub('memedPostPic', '', str(targetFile)).split('.')[0]
+                picTitle = album_json['items'][picId]['postName'] + ' by /u/{}'.format(album_json['items'][picId]['postAuthor'])
+                picName = picId 
+
+                picDescription = ''
+
+                picDescription += "Post URL: {}\n\n".format(album_json['items'][picId]['postUrl'])
+                picDescription += "Top Comment: {}\n\n".format(album_json['items'][picId]['postComment'])
+                picDescription += "Comment Author: /u/{}\n\n".format(album_json['items'][picId]['commentAuthor'])
+                picDescription += "Picture URL: {}".format(album_json['items'][picId]['picUrl'])
+
+                with open(targetFile, 'rb') as image_file:
+                    encoded64_string = base64.b64encode(image_file.read())
+                    ImgurAPI.upload_image(encoded64_string, album_id, picName, picTitle, picDescription, access_token
+
+
+
+
+
+
+
+
+
+
+
+
+
+
