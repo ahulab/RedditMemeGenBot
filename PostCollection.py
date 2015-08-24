@@ -5,7 +5,7 @@ from urllib2 import Request
 from PIL import Image, ImageDraw, ImageFont
 from StringIO import StringIO
 
-# from MemeIt import *
+
 path_to_font = '/Library/Font/Impact.ttf'
 
 
@@ -16,11 +16,11 @@ class Post:
             'postId': submission.id,
             'postName': submission.title,
             'postComment': submission.comments[commentIndex].body,
-            'postAuthor': submission.author,
+            'postAuthor': submission.author.name,
             'postUrl': submission.permalink,
             'picUrl': submission.url,
             'postDate': submission.created,
-            'commentAuthor': submission.comments[commentIndex].author
+            'commentAuthor': submission.comments[commentIndex].name
         }
         self.filetype = filetype
         self.draw_failed = None
@@ -50,12 +50,11 @@ class Post:
         self.dict['postComment'] = re.sub(r'\]\(.*?\)', ' ', self.dict['postComment'])
         self.dict['postComment'] = re.sub(r'[\n\r\[\]]', '', self.dict['postComment']).strip(',.;:`~@# $').encode('utf-8')
 
-        print self.dict['postComment']
         # removing links, because they are ugly
         # get both halfs of the string
         string_halves = self.halve_string()
 
-        print "First half string length: {}. Second half length: {}".format(len(string_halves[0]), len(string_halves[1]))
+        #print "First half string length: {}. Second half length: {}".format(len(string_halves[0]), len(string_halves[1]))
 
         # counting number of words total so we can guess how many lines we will need to have
         word_count = 0
@@ -93,7 +92,8 @@ class Post:
             # don't save the image
             pass
         else:
-            self.image.save('memedPost{}.{}'.format(self.dict['postId'], self.filetype))
+            self.image.save('memedPostPic{}.{}'.format(self.dict['postId'], self.filetype))
+            'Saving modified image'
 
     def split_to_fit(self, string, draw, position):
         # string is first half of the message
@@ -190,11 +190,11 @@ class Post:
                 # drawing text in black twice to the left and right of where the white text is finally drawn
                 # this was the easiest way I could think of to get a black outline on the white text
                 try:
-                    draw.multiline_text(xy, new_string, fill='black', font=self.font, align='center')
+                    draw.multiline_text(xy, new_string, fill='black', font=self.font)
                     ab = (xy[0] + 3, xy[1] + 3)
-                    draw.multiline_text(ab, new_string, fill='black', font=self.font, align='center')
+                    draw.multiline_text(ab, new_string, fill='black', font=self.font)
                     cd = (xy[0] + 1, xy[1] + 1)
-                    draw.multiline_text(cd, new_string, fill='white', font=self.font, align='center')
+                    draw.multiline_text(cd, new_string, fill='white', font=self.font)
 
                     self.draw_failed = False
                 except:
@@ -220,7 +220,7 @@ class Post:
 
         if font.getsize(string_halves[0])[0] > width or font.getsize(string_halves[1])[0] > width:
             # the line goes over, this is fine
-            print "Choosing font size of {}".format(last_size)
+            #print "Choosing font size of {}".format(last_size)
             if last_size:
                 # this function has been called recursilely at least once, so there is a last font size that hase
                 # been passed to it
