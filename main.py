@@ -277,18 +277,4 @@ for path in folder_paths:
 
                 with open(targetFile, 'rb') as image_file:
                     encoded64_string = base64.b64encode(image_file.read())
-                    ImgurAPI.upload_image(encoded64_string, album_id, picName, picTitle, picDescription, access_token
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+                    ImgurAPI.upload_image(encoded64_string, album_id, picName, picTitle, picDescription, access_token)
