@@ -95,124 +95,124 @@ def load_draw_save(dictionary, submission, filetype, commentIndex,
 # 'whatsthisplant', 'whatsthisbug', 'animalID', 'whatsthisbird',
 # 'Whatisthisthing', 'mildlyinteresting', 'whatsthisrock', 'FossilID',
 #   'nsfw', 'gonewild']
-# top_subreddits = ['pics', 'all']
+top_subreddits = ['pics', 'all']
 
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# # # # # # # # # # # #  main stuff # # # # # # # # # # # # # # #
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # #  main stuff # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 
-# user_agent = "Meme generator bot v1.0 by /u/cDoubt"
-# r = praw.Reddit(user_agent=user_agent)
-# folder_paths = []
+user_agent = "Meme generator bot v1.0 by /u/cDoubt"
+r = praw.Reddit(user_agent=user_agent)
+folder_paths = []
 
-# workingDirectory = getcwd()
+workingDirectory = getcwd()
 
-# # Creates folder in working directory named 'OutputFolders' to store all of the images
-# # If the folder already exists then we make it our output destination and move on
-# try:
-#     mkdir('{}/OutputFolders'.format(getcwd()))
-#     outputFoldersPath = '{}/OutputFolders'.format(getcwd())
-# except OSError as error:
-#     outputFoldersPath = '{}/OutputFolders'.format(getcwd())
-
-
-# for subreddit in top_subreddits:
-#     print '\nWorking on /r/{}'.format(subreddit)
-#     sub_name = subreddit
-#     pics_subreddit = r.get_subreddit(sub_name)
-#     hot_posts = pics_subreddit.get_hot(limit=40)
-
-#     post_dict = {
-#     'subreddit': subreddit,
-#     'time':  strftime("%a, %d %b %Y at %H_%M", gmtime()), 
-#     'items': {}
-#     }
-#     # other options include
-#     # get_top_from_all, get_top, get_top_from_month, get_top_from_week
-
-#     ## this block is for testing
-#     #submission = r.get_submission(submission_id='3i0bab')
-#     #for x in range(0,1):
-
-#     for submission in hot_posts:
-
-#         # make sure there is at least 1 comment in the submission
-#         if submission.comments > 0:
-#             # boolean to run the main
-#             doable = False
-#             # try 3 times to find a suitable comment
-#             for attempt in range(0, 3):
-#                 try:
-#                     # for instance, if someone comments with a link to an
-#                     # imgur album, it could error out, so we try again
-#                     if len(submission.comments[attempt].body) > 0:
-#                         comment = attempt
-#                         doable = True
-#                         # break once we find a comment, this commend gets
-#                         # passed to the init function of the post class
-#                         break
-#                 except:
-#                     pass
-
-#         # if it's not doable it's because the above if statement
-#         # could not find a suitable comment, or any comment at all
-#         if doable:
-#             # to handle imgur albums we just get the first image from the album
-#             if submission.domain == 'imgur.com' and '/a/' in submission.url:
-#                 album_id = submission.url.split('/a/')[-1]
-
-#                 print "\nURL is {}. It is an imgur album. Post id is {}".format(submission.url, submission.id)
-#                 load_draw_save(post_dict, submission, 'jpg', attempt, album=True, album_id=album_id)
-
-#             # otherwise we find the filetype of the picture
-#             elif '.jpg' in submission.url or '.png' in submission.url or '.JPEG' in submission.url:
-#                 # so that we can pass the filetype to the Post instance and name the file accordingly when we save it
-
-#                 filetype = submission.url.split('.')[-1]
-#                 if 'jpg' in filetype.lower():
-#                     filetype = 'jpg'
-#                 elif 'png' in filetype.lower():
-#                     filetype = 'png'
-#                 elif 'jpeg' in filetype.lower():
-#                     filetype = 'jpeg'
-
-#                 print "\nURL is {}. Post id is {}".format(submission.url, submission.id)
-
-#                 # do it all yo
-#                 load_draw_save(post_dict, submission, filetype, attempt)
-
-#             elif submission.domain == 'imgur.com':
-#                 # this is gross
-#                 # so if the image does not have .jpg or .png or .JPEG in it's url, BUT it's domain is imgur.com
-#                 # then this means that it is still an image, but the link goes to the viewing page on imgur, not the
-#                 # actual image. So we will just add .jpg to the end of the url and carry on
-
-#                 print "\nURL is {}. Post id is {}".format(submission.url, submission.id)
-
-#                 try:
-#                     filetype = '.jpg'
-#                     # do it all yo
-#                     load_draw_save(post_dict, submission, filetype, attempt)
-#                 except:
-#                     print 'Error loading file for post {}, skipping'.format(submission.id)
+# Creates folder in working directory named 'OutputFolders' to store all of the images
+# If the folder already exists then we make it our output destination and move on
+try:
+    mkdir('{}/OutputFolders'.format(getcwd()))
+    outputFoldersPath = '{}/OutputFolders'.format(getcwd())
+except OSError as error:
+    outputFoldersPath = '{}/OutputFolders'.format(getcwd())
 
 
-#             else:
-#                 print "\nIgnoring post {}, not a picture, url is {}".format(submission.id, submission.url)
+for subreddit in top_subreddits:
+    print '\nWorking on /r/{}'.format(subreddit)
+    sub_name = subreddit
+    pics_subreddit = r.get_subreddit(sub_name)
+    hot_posts = pics_subreddit.get_hot(limit=40)
 
-#         elif not doable:
-#             print '\nCould not find a suitable comment on this post'
+    post_dict = {
+    'subreddit': subreddit,
+    'time':  strftime("%a, %d %b %Y at %H_%M", gmtime()), 
+    'items': {}
+    }
+    # other options include
+    # get_top_from_all, get_top, get_top_from_month, get_top_from_week
 
-#     # move all images from this subreddit into a folder, add that folder path to 
-#     # list so that we can run thru them after and upload each image to an imgur album
-#     folder_paths.append(file_work(sub_name, outputFoldersPath))
+    ## this block is for testing
+    #submission = r.get_submission(submission_id='3i0bab')
+    #for x in range(0,1):
 
-#     # write dictionary data from this subreddit to a file so that we can name pictures and 
-#     # write descriptions about each etc. 
-#     with open('{}/memedPost_json_data.txt'.format(folder_paths[-1]), 'w') as outfile:
-#         dump(post_dict, outfile)
+    for submission in hot_posts:
+
+        # make sure there is at least 1 comment in the submission
+        if submission.comments > 0:
+            # boolean to run the main
+            doable = False
+            # try 3 times to find a suitable comment
+            for attempt in range(0, 3):
+                try:
+                    # for instance, if someone comments with a link to an
+                    # imgur album, it could error out, so we try again
+                    if len(submission.comments[attempt].body) > 0:
+                        comment = attempt
+                        doable = True
+                        # break once we find a comment, this commend gets
+                        # passed to the init function of the post class
+                        break
+                except:
+                    pass
+
+        # if it's not doable it's because the above if statement
+        # could not find a suitable comment, or any comment at all
+        if doable:
+            # to handle imgur albums we just get the first image from the album
+            if submission.domain == 'imgur.com' and '/a/' in submission.url:
+                album_id = submission.url.split('/a/')[-1]
+
+                print "\nURL is {}. It is an imgur album. Post id is {}".format(submission.url, submission.id)
+                load_draw_save(post_dict, submission, 'jpg', attempt, album=True, album_id=album_id)
+
+            # otherwise we find the filetype of the picture
+            elif '.jpg' in submission.url or '.png' in submission.url or '.JPEG' in submission.url:
+                # so that we can pass the filetype to the Post instance and name the file accordingly when we save it
+
+                filetype = submission.url.split('.')[-1]
+                if 'jpg' in filetype.lower():
+                    filetype = 'jpg'
+                elif 'png' in filetype.lower():
+                    filetype = 'png'
+                elif 'jpeg' in filetype.lower():
+                    filetype = 'jpeg'
+
+                print "\nURL is {}. Post id is {}".format(submission.url, submission.id)
+
+                # do it all yo
+                load_draw_save(post_dict, submission, filetype, attempt)
+
+            elif submission.domain == 'imgur.com':
+                # this is gross
+                # so if the image does not have .jpg or .png or .JPEG in it's url, BUT it's domain is imgur.com
+                # then this means that it is still an image, but the link goes to the viewing page on imgur, not the
+                # actual image. So we will just add .jpg to the end of the url and carry on
+
+                print "\nURL is {}. Post id is {}".format(submission.url, submission.id)
+
+                try:
+                    filetype = '.jpg'
+                    # do it all yo
+                    load_draw_save(post_dict, submission, filetype, attempt)
+                except:
+                    print 'Error loading file for post {}, skipping'.format(submission.id)
+
+
+            else:
+                print "\nIgnoring post {}, not a picture, url is {}".format(submission.id, submission.url)
+
+        elif not doable:
+            print '\nCould not find a suitable comment on this post'
+
+    # move all images from this subreddit into a folder, add that folder path to 
+    # list so that we can run thru them after and upload each image to an imgur album
+    folder_paths.append(file_work(sub_name, outputFoldersPath))
+
+    # write dictionary data from this subreddit to a file so that we can name pictures and 
+    # write descriptions about each etc. 
+    with open('{}/memedPost_json_data.txt'.format(folder_paths[-1]), 'w') as outfile:
+        dump(post_dict, outfile)
 
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -230,8 +230,7 @@ access_token = environ['imgur_access_token']
 
 # folder_paths is a list of the path for each folder that we've saved images
 # to when the program last ran. Of format /Users/usr/Env/etc....
-for path in ['/Users/baluha/Envs/RedditMemeBeta/RedditMemeGenBot/OutputFolders/all Tue, 25 Aug 2015 at 14_23']:
-#for path in folder_paths:
+for path in folder_paths:
 
     print '\n Uploading images to imgur album for files in {}'.format(path)
     # change directory to the folder path
@@ -280,3 +279,4 @@ for path in ['/Users/baluha/Envs/RedditMemeBeta/RedditMemeGenBot/OutputFolders/a
                 with open(targetFile, 'rb') as image_file:
                     encoded64_string = base64.b64encode(image_file.read())
                     ImgurAPI.upload_image(encoded64_string, album_id, picName, picTitle, picDescription, access_token)
+
