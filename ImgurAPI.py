@@ -113,9 +113,10 @@ def album_creation(title, description, access_token, privacy='public', layout='v
     url = 'https://api.imgur.com/3/album'
     request = urllib2.Request(url, headers={'Authorization' : 'Bearer {}'.format(access_token)})
 
+    title = "{} {}".format(title, time)
     values = {
-    'title' : "{} {}".format(title, time),
-    'description' : description,
+    'title' : title.encode('utf-8'),
+    'description' : description.encode('utf-8'),
     'privacy' : privacy,
     'layout' : layout,
     }
@@ -144,10 +145,10 @@ def upload_image(picBase64, album, name, title, description, access_token):
 
     values = {
     'image' : picBase64,
-    'album' : album,
+    'album' : album.encode('utf-8'),
     'type' : 'base64',
-    'name' : name,
-    'title' : title,
+    'name' : name.encode('utf-8'),
+    'title' : title.encode('utf-8'),
     'description' : description
     }
 
