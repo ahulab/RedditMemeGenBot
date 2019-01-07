@@ -4,6 +4,12 @@ Created 25 August 2015
 
 Creates image-macros out of an image post on a subreddit and the top comment on that post
 
+## Examples
+- https://imgur.com/a/D5TM1
+- https://imgur.com/a/zJRdU
+- https://imgur.com/a/LrOLk
+- https://imgur.com/a/1MwdQ
+
 ## Note!!!!!
 If you clone this repo and use it, it will fail if it comes across an imgur album post. This is because I am using the imgur API to get the first image from any imgur album. Doing so requires passing a Client-ID in the header, I am loading this client-ID from an environment variable since it is specific to my registered application. I'd be happy to share the client-ID with anyone who wants to contribute, just message me as I did not want to leave it in the source. 
 
